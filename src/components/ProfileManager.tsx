@@ -52,12 +52,21 @@ export function ProfileManager({ selectedProfile, onSelectProfile }: ProfileMana
     onSelectProfile(newProfile.id)
   }
 
-  const handleDeleteProfile = (profileId: string) => {
+  const handleDeleteProfile = async (profileId: string) => {
     // Delete the profile
     setProfiles((current) => (current || []).filter(p => p.id !== profileId))
     
     // Delete all text messages for this profile
     setTextMessages((current) => (current || []).filter(msg => msg.profileId !== profileId))
+    
+    // Delete conversation history for this profile
+    try {
+      if (window.spark?.kv?.delete) {
+        await window.spark.kv.delete(`conversation-${profileId}`)
+      }
+    } catch (error) {
+      console.warn('Failed to delete conversation history:', error)
+    }
     
     if (selectedProfile === profileId) {
       onSelectProfile('')
