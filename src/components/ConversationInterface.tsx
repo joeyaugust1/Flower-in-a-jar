@@ -3,8 +3,19 @@ import { useKV } from '@github/spark/hooks'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from '@/components/ui/alert-dialog'
 import { TextProfile } from '@/App'
-import { PaperPlaneTilt, User, Sparkle } from '@phosphor-icons/react'
+import { PaperPlaneTilt, User, Sparkle, Trash, DotsThreeVertical } from '@phosphor-icons/react'
 
 interface Message {
   id: string
@@ -111,22 +122,50 @@ Based on their communication style above and the user's message: "${userMessage}
     })
   }
 
+  const handleClearConversation = () => {
+    setMessages([])
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Conversation Header */}
-      <div className="flex items-center space-x-3 p-4 border-b border-border bg-muted/30 rounded-t-lg">
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-          <Sparkle size={20} className="text-primary" weight="duotone" />
+      <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30 rounded-t-lg">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <Sparkle size={20} className="text-primary" weight="duotone" />
+          </div>
+          <div>
+            <h3 className="font-medium">{profile.name}</h3>
+            <p className="text-sm text-muted-foreground">AI Personality • Ready to chat</p>
+          </div>
         </div>
-        <div>
-          <h3 className="font-medium">{profile.name}</h3>
-          <p className="text-sm text-muted-foreground">AI Personality • Ready to chat</p>
-        </div>
+        {messages && messages.length > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <Trash size={16} className="text-muted-foreground" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear Conversation</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to clear all messages in this conversation? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleClearConversation}>Clear All</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
-      {/* Messages Area - This should expand and scroll properly */}
-      <ScrollArea className="flex-1 px-4">
-        <div className="space-y-4 py-4">
+      {/* Messages Area - Fixed height with proper scrolling */}
+      <div className="flex-1 min-h-0">
+        <ScrollArea className="h-full">
+          <div className="px-4 py-4 space-y-4">
           {messages && messages.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <Sparkle size={32} className="mx-auto mb-4 opacity-50" weight="duotone" />
@@ -190,8 +229,9 @@ Based on their communication style above and the user's message: "${userMessage}
           )}
 
           <div ref={messagesEndRef} />
-        </div>
-      </ScrollArea>
+          </div>
+        </ScrollArea>
+      </div>
 
       {/* Input Area */}
       <div className="p-4 border-t border-border bg-muted/30">
