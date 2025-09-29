@@ -130,7 +130,7 @@ export function ProfileManager({ selectedProfile, onSelectProfile }: ProfileMana
           {profiles.map((profile) => (
             <Card
               key={profile.id}
-              className={`cursor-pointer transition-all duration-200 hover:organic-shadow ${
+              className={`group cursor-pointer transition-all duration-200 hover:organic-shadow ${
                 selectedProfile === profile.id 
                   ? 'ring-2 ring-primary gentle-glow' 
                   : 'hover:ring-1 hover:ring-border'
