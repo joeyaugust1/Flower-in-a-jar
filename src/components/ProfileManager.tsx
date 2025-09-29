@@ -4,6 +4,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from '@/components/ui/alert-dialog'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Plus, User, Trash, Heart } from '@phosphor-icons/react'
@@ -16,6 +27,7 @@ interface ProfileManagerProps {
 
 export function ProfileManager({ selectedProfile, onSelectProfile }: ProfileManagerProps) {
   const [profiles, setProfiles] = useKV<TextProfile[]>('text-profiles', [])
+  const [, setTextMessages] = useKV<import('@/App').TextMessage[]>('text-messages', [])
   const [newProfileName, setNewProfileName] = useState('')
   const [consentGiven, setConsentGiven] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
@@ -41,7 +53,12 @@ export function ProfileManager({ selectedProfile, onSelectProfile }: ProfileMana
   }
 
   const handleDeleteProfile = (profileId: string) => {
+    // Delete the profile
     setProfiles((current) => (current || []).filter(p => p.id !== profileId))
+    
+    // Delete all text messages for this profile
+    setTextMessages((current) => (current || []).filter(msg => msg.profileId !== profileId))
+    
     if (selectedProfile === profileId) {
       onSelectProfile('')
     }
@@ -133,17 +150,39 @@ export function ProfileManager({ selectedProfile, onSelectProfile }: ProfileMana
                       </CardDescription>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDeleteProfile(profile.id)
-                    }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash size={16} className="text-destructive" />
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => e.stopPropagation()}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash size={16} className="text-destructive" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Profile</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete {profile.name}'s profile? This will permanently remove:
+                          <br />• The personality profile
+                          <br />• All uploaded text content ({profile.messageCount} items)
+                          <br />• All conversation history
+                          <br /><br />This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => handleDeleteProfile(profile.id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete Profile
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </CardHeader>
               <CardContent>
