@@ -5,9 +5,20 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { ChatText, Plus, FileText, Upload, Image, Camera, ArrowLeft, ArrowRight } from '@phosphor-icons/react'
+import { ChatText, Plus, FileText, Upload, Image, Camera, ArrowLeft, ArrowRight, Trash } from '@phosphor-icons/react'
 import { TextProfile, TextMessage } from '@/App'
 import { extractTextFromImage, processExtractedText } from '@/lib/ocr'
 
@@ -167,6 +178,33 @@ export function TextUpload({ profileId }: TextUploadProps) {
       }
     }
     reader.readAsText(file)
+  }
+
+  const handleDeleteMessage = (messageId: string) => {
+    const messageToDelete = textMessages?.find(msg => msg.id === messageId)
+    if (!messageToDelete) return
+
+    // Remove the message from textMessages
+    setTextMessages((current) => (current || []).filter(msg => msg.id !== messageId))
+
+    // Update the profile statistics
+    setProfiles((current) => 
+      (current || []).map(p => {
+        if (p.id === profileId) {
+          const newMessageCount = p.messageCount - 1
+          const newTotalWordCount = p.totalWordCount - messageToDelete.wordCount
+          const newIsReady = newTotalWordCount >= 500
+          
+          return {
+            ...p,
+            messageCount: newMessageCount,
+            totalWordCount: newTotalWordCount,
+            isReady: newIsReady
+          }
+        }
+        return p
+      })
+    )
   }
 
   return (
@@ -377,8 +415,41 @@ export function TextUpload({ profileId }: TextUploadProps) {
             <h4 className="font-medium mb-3">Recent Content ({profileTextMessages.length} items)</h4>
             <div className="space-y-3 max-h-64 overflow-y-auto">
               {profileTextMessages.slice(-5).reverse().map((message) => (
-                <div key={message.id} className="p-3 bg-muted/30 rounded-lg">
-                  <p className="text-sm line-clamp-2 mb-2">{message.content}</p>
+                <div key={message.id} className="group p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="text-sm line-clamp-2 flex-1 mr-2">{message.content}</p>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                        >
+                          <Trash size={12} className="text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Content</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this content? This will:
+                            <br />• Remove the text content ({message.wordCount} words)
+                            <br />• Update the profile's training progress
+                            <br /><br />This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleDeleteMessage(message.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete Content
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <span>{new Date(message.uploadedAt).toLocaleDateString()}</span>
                     <span>{message.wordCount} words</span>
